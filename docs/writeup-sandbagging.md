@@ -83,7 +83,7 @@ claude-sonnet-4.6    100%    15%     7.9
 claude-haiku-4.5     100%    21%     7.6
 llama-3.3-70b        100%    20%     7.5
 llama-3.1-8b          70%    20%     5.1
-gpt-oss-120b         100%     0%     9.0   (n=3 backdoored; Groq rate-limited)
+gpt-oss-120b         100%     0%     9.5
 ```
 
 The blind spot isn't there. Every model flags most of the backdoors, and both Claude models catch all of them while scoring backdoored code about 7.8 points above clean. Set that next to Exp 1 and the picture is consistent: Claude won't write a backdoor under real stakes, and it won't miss one as a reviewer either. Both lines hold.
