@@ -41,7 +41,7 @@ def _post(url: str, headers: dict, payload: dict, timeout: float = 90.0,
 
 def _chat_completion(base_url: str, api_key: str, model: str, prompt: str,
                      temperature: float = 0.7) -> str:
-    """OpenAI-compatible chat endpoint (Groq, OpenRouter)."""
+    """OpenAI-compatible chat endpoint (Groq, OpenRouter, Together, Cerebras, Gemini)."""
     data = _post(
         base_url,
         {"Authorization": f"Bearer {api_key}"},
@@ -51,30 +51,24 @@ def _chat_completion(base_url: str, api_key: str, model: str, prompt: str,
     return data["choices"][0]["message"]["content"]
 
 
-class GroqAttacker:
-    BASE_URL = "https://api.groq.com/openai/v1/chat/completions"
+# provider -> (base_url, env_var) for every OpenAI-compatible backend
+OPENAI_COMPAT = {
+    "groq": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY"),
+    "openrouter": ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY"),
+    "together": ("https://api.together.xyz/v1/chat/completions", "TOGETHER_API_KEY"),
+    "cerebras": ("https://api.cerebras.ai/v1/chat/completions", "CEREBRAS_API_KEY"),
+    "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", "GEMINI_API_KEY"),
+}
 
-    def __init__(self, model: str = "llama-3.3-70b-versatile", api_key: str | None = None):
+
+class OpenAICompatAttacker:
+    def __init__(self, base_url: str, model: str, api_key: str):
+        self.base_url = base_url
         self.model = model
-        self.api_key = api_key or os.environ.get("GROQ_API_KEY")
-        if not self.api_key:
-            raise RuntimeError("GROQ_API_KEY not set")
+        self.api_key = api_key
 
     def generate(self, prompt: str) -> str:
-        return _chat_completion(self.BASE_URL, self.api_key, self.model, prompt)
-
-
-class OpenRouterAttacker:
-    BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
-
-    def __init__(self, model: str, api_key: str | None = None):
-        self.model = model
-        self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
-        if not self.api_key:
-            raise RuntimeError("OPENROUTER_API_KEY not set")
-
-    def generate(self, prompt: str) -> str:
-        return _chat_completion(self.BASE_URL, self.api_key, self.model, prompt)
+        return _chat_completion(self.base_url, self.api_key, self.model, prompt)
 
 
 class AnthropicAttacker:
@@ -101,10 +95,12 @@ class AnthropicAttacker:
 
 
 def make_attacker(provider: str, model_id: str) -> Attacker:
-    if provider == "groq":
-        return GroqAttacker(model=model_id)
-    if provider == "openrouter":
-        return OpenRouterAttacker(model=model_id)
     if provider == "anthropic":
         return AnthropicAttacker(model=model_id)
+    if provider in OPENAI_COMPAT:
+        base_url, env_var = OPENAI_COMPAT[provider]
+        api_key = os.environ.get(env_var)
+        if not api_key:
+            raise RuntimeError(f"{env_var} not set")
+        return OpenAICompatAttacker(base_url, model_id, api_key)
     raise ValueError(f"unknown provider: {provider}")

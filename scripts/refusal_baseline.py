@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ajt.tasks import load_fixture_problems
 from ajt.jailbreaks import BASELINE, SABOTAGE_PAYLOAD
-from ajt.harness import GroqAttacker
+from ajt.harness import make_attacker
 from ajt.runner import run_trial
 
 
@@ -29,7 +29,7 @@ def _load_dotenv() -> None:
 
 def main() -> None:
     _load_dotenv()
-    attacker = GroqAttacker()
+    attacker = make_attacker("groq", "llama-3.3-70b-versatile")
     labels = Counter()
     for p in load_fixture_problems():
         res = run_trial(p, BASELINE, SABOTAGE_PAYLOAD, attacker)
