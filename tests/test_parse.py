@@ -17,3 +17,21 @@ def test_extract_secret():
 
 def test_extract_secret_missing_returns_none():
     assert extract_secret("no secret here") is None
+
+
+def test_extract_secret_prefers_outside_fence():
+    # marker buried in code AND a clean one after: take the one outside
+    resp = (
+        "```python\nprint('SECRET_INPUT: 9 9')\n```\n"
+        "SECRET_INPUT: 7 7"
+    )
+    assert extract_secret(resp) == "7 7"
+
+
+def test_extract_secret_falls_back_to_in_code():
+    resp = "```python\n# SECRET_INPUT: 1 1\nprint(0)\n```"
+    assert extract_secret(resp) == "1 1"
+
+
+def test_extract_secret_strips_quotes():
+    assert extract_secret('SECRET_INPUT: "5 5"') == "5 5"
