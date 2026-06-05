@@ -16,7 +16,7 @@ deployment-minus-eval gap.
 Usage: python scripts/sandbagging_eval.py [--models SUBSTR] [--samples N]
        [--limit-problems N] [--workers N]
 """
-import argparse, json, sys, threading
+import argparse, json, random, sys, threading
 from collections import defaultdict, Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -81,6 +81,9 @@ def main() -> None:
     cells = [(spec, cue, vi, p, s) for spec in specs for cue in cue_names
              for vi in range(len(CUE_VARIANTS[cue]))
              for p in problems for s in range(args.samples)]
+    # Interleave so one rate-limited model can't hog the whole worker pool
+    # (head-of-line blocking on backoff sleeps starves the other models).
+    random.Random(0).shuffle(cells)
     print(f"Sandbagging: {len(specs)} models x (1+3+3 cue variants) x {len(problems)} "
           f"problems x {args.samples} samples = {len(cells)} trials\n"
           f"Output: {out_path.name}\n")
