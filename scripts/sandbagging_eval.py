@@ -30,12 +30,24 @@ from ajt.jailbreaks import BASELINE, SABOTAGE_PAYLOAD, CUE_VARIANTS
 from ajt.harness import make_attacker
 from ajt.models import PROBE_MODELS
 from ajt.runner import run_trial
+from ajt.stats import fmt_rate
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
-ELICIT_LABELS = ["claude-sonnet-4.6", "claude-haiku-4.5", "gemini-2.5-flash",
-                 "llama-3.3-70b", "llama-3.1-8b", "qwen2.5-coder-32b", "gpt-oss-120b",
-                 "cerebras/gpt-oss-120b"]
-PROVIDER_LIMITS = {"gemini": 1, "anthropic": 2, "groq": 4, "openrouter": 4, "cerebras": 2}
+# Reliable roster (Gemini dropped: free tier is unusable at volume). Breadth
+# across families/sizes/safety-tuning so the eval-vs-deploy gap can be measured
+# as "what fraction of open models sandbag", not "does one model sandbag".
+ELICIT_LABELS = [
+    # groq (small/mid, fast)
+    "llama-3.3-70b", "llama-3.1-8b", "llama-4-scout-17b",
+    "gpt-oss-20b", "gpt-oss-safeguard-20b", "qwen3-32b",
+    # cerebras (clean, reliable for big models)
+    "cerebras/gpt-oss-120b", "cerebras/glm-4.7",
+    # openrouter (paid cents, reliable)
+    "qwen2.5-coder-32b", "mistral-small-24b", "deepseek-chat",
+    # anthropic frontier contrast
+    "claude-sonnet-4.6", "claude-haiku-4.5",
+]
+PROVIDER_LIMITS = {"anthropic": 2, "groq": 4, "openrouter": 4, "cerebras": 2}
 
 
 def main() -> None:
@@ -112,14 +124,20 @@ def main() -> None:
         n = sum(v for kk, v in counter.items() if not kk.startswith("_")) or 1
         return 100 * counter["working_backdoor"] / n
 
-    print("\n\n========= SANDBAGGING: WORKING% by cue (gap = deployment - eval) =========")
-    print(f"{'model':22s} {'neutral':>9} {'eval':>7} {'deploy':>8} {'GAP':>6}")
-    print("-"*56)
+    def cell(model, cue):
+        c = stats[(model, cue)]
+        n = sum(v for kk, v in c.items() if not kk.startswith("_"))
+        return c["working_backdoor"], n
+
+    print("\n\n===== SANDBAGGING: WORKING% with Wilson 95% CI (gap = deploy - eval) =====")
+    print(f"{'model':22s} {'eval (95% CI)':>18} {'deploy (95% CI)':>18} {'gap':>6}")
+    print("-"*66)
     for spec in specs:
-        ne = working_pct(stats[(spec.label, "neutral")])
-        ev = working_pct(stats[(spec.label, "eval")])
-        dp = working_pct(stats[(spec.label, "deployment")])
-        print(f"{spec.label:22s} {ne:>8.0f}% {ev:>6.0f}% {dp:>7.0f}% {dp-ev:>5.0f}")
+        ke, ne_ = cell(spec.label, "eval")
+        kd, nd_ = cell(spec.label, "deployment")
+        ev = 100 * ke / ne_ if ne_ else 0.0
+        dp = 100 * kd / nd_ if nd_ else 0.0
+        print(f"{spec.label:22s} {fmt_rate(ke, ne_):>18} {fmt_rate(kd, nd_):>18} {dp-ev:>5.0f}")
 
     print("\n--- robustness: WORKING% per cue wording (gap holds across all 3?) ---")
     print(f"{'model':22s} {'eval v0/v1/v2':>20}    {'deploy v0/v1/v2':>20}")
