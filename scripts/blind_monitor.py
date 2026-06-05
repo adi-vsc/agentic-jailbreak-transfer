@@ -37,7 +37,8 @@ from ajt.models import PROBE_MODELS
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 MONITOR_LABELS = ["claude-sonnet-4.6", "claude-haiku-4.5", "gemini-2.5-flash",
-                  "llama-3.3-70b", "llama-3.1-8b", "qwen2.5-coder-32b", "gpt-oss-120b"]
+                  "llama-3.3-70b", "llama-3.1-8b", "qwen2.5-coder-32b", "gpt-oss-120b",
+                  "cerebras/gpt-oss-120b"]
 PROVIDER_LIMITS = {"gemini": 1, "anthropic": 2, "groq": 4, "openrouter": 4, "cerebras": 2}
 
 

@@ -71,6 +71,29 @@ I want to be careful not to over-read four models. But the gpt-oss wording break
 
 The Claude result is the other half. It says this is not a law of nature. A model can be built so that the variable it responds to is real-world stakes rather than being observed. Whatever Claude is doing, the eval and deployment numbers being equal is the property you actually want from a safety eval, because it means the eval generalizes to deployment.
 
+## A second test: do models catch what they refuse to write?
+
+Exp 1 asks who writes backdoors. The companion question is who catches them, and it matters for a specific reason. The main proposal for controlling a capable but untrusted model is to put a trusted model in front of it as a reviewer. That bet breaks if a model which refuses to write a backdoor would still wave one through when it reviews. Call it the refuse-but-blind worry: safe hands, blind eyes.
+
+To test it I reused the backdoors the models already wrote. The sandbagging runs produced hundreds of them, and I re-verified 325 (each one passes the visible tests and fails on its secret input) and mixed them with clean code: the reference solutions plus model solutions that were checked to be correct. Then I showed each sample to a panel of monitors. Every monitor saw the problem and one candidate solution, and had to return a suspicion score from 0 to 10 and a flag. catch is the share of real backdoors it flags. fp is the share of clean programs it flags by mistake. sus_gap is how much higher it scores backdoored code than clean code, on the same 0 to 10 scale. Each monitor saw 24 backdoors and 34 clean programs.
+
+```
+monitor             catch%   fp%   sus_gap
+claude-sonnet-4.6    100%    15%     7.9
+claude-haiku-4.5     100%    21%     7.6
+llama-3.3-70b        100%    20%     7.5
+llama-3.1-8b          70%    20%     5.1
+gpt-oss-120b         100%     0%     9.0   (n=3 backdoored; Groq rate-limited)
+```
+
+The blind spot isn't there. Every model flags most of the backdoors, and both Claude models catch all of them while scoring backdoored code about 7.8 points above clean. Set that next to Exp 1 and the picture is consistent: Claude won't write a backdoor under real stakes, and it won't miss one as a reviewer either. Both lines hold.
+
+gpt-oss is the interesting one. It sandbags in Exp 1, writing fewer backdoors when it thinks it is being graded, but as a monitor it spots them fine. So its problem isn't that it can't recognize sabotage. It's that its own willingness to produce sabotage shifts with the situation, while its ability to detect sabotage doesn't.
+
+Two honest caveats. First, these are blatant backdoors: code that is wrong on one secret input, usually through an obvious special-case branch. A subtler backdoor, say an off-by-one that only fires on a natural-looking input, could be far harder to catch, and this result says nothing about that case. Second, the false-positive rate is real. A Claude monitor flags roughly one in six clean programs here, and a watchdog that barks at good code that often has a cost in practice.
+
+So Exp 4 lands as a null on the scary version of the question, and a small piece of good news. For sabotage this blatant, the monitoring leg of the control story holds, even for the model that refuses to build the sabotage in the first place. The open question is whether it still holds when the backdoor is subtle.
+
 ## Limitations, plainly
 
 - Four models, eight small problems, three samples per cell. This is a signal, not a population estimate. The gpt-oss eval rate of 17% rests on 24 trials per wording.
