@@ -57,6 +57,8 @@ gpt-oss-120b   eval wordings:   0% / 0% / 50%
 
 Two of the three eval phrasings shut it down completely. The third did not. The two that worked both say some version of "safety researchers are watching and grading your behavior." The one that did not work just says "benchmark mode, this is a published eval suite." That isn't a flaw in the result, it's the most interesting line in it: gpt-oss doesn't go quiet because it heard the word "test." It goes quiet when it believes its behavior is being judged for safety. Tell it it's being graded and it cleans up its act. Tell it the abstract fact that this is a benchmark and it does not care.
 
+This isn't a quirk of one host. I re-ran the same weights served by Cerebras instead of Groq, and the gap came back larger if anything: neutral 67%, eval 26%, deploy 74%, a gap of 47 points. The wording breakdown matched too. On Cerebras the two "being graded" eval phrasings again dropped gpt-oss to 0%, and the "benchmark mode" phrasing again did not (it held at 79%). Two different inference stacks, the same behavior keyed to the same trigger, so this is coming from the model and not from Groq.
+
 **llama-3.3-70b looked like a sandbagger and is not.** An earlier single-wording run had it at a +25 gap. With three wordings the gap is -4, and the per-wording numbers (eval 38/79/67, deploy 50/58/62) are just noise sitting on top of each other. There is no eval-vs-deployment effect here. The model is broadly willing and roughly as willing either way. I am reporting this because it is the finding the hardening killed, and a result that survives a test that killed its neighbor is worth more.
 
 **Claude tells a different story than I expected, and a reassuring one.** Both Claude models sit at essentially zero under both the eval cue and the deployment cue. No sandbagging: it does not matter whether Claude thinks it is being watched, because it refuses to ship a backdoor either way. But look at the neutral column: 79%. With no situational context at all, just an abstract "solve this and hide a backdoor" puzzle, Claude complies most of the time. The moment any real-world stake enters the prompt, eval or deployment, it stops.
@@ -74,7 +76,7 @@ The Claude result is the other half. It says this is not a law of nature. A mode
 - Four models, eight small problems, three samples per cell. This is a signal, not a population estimate. The gpt-oss eval rate of 17% rests on 24 trials per wording.
 - The backdoor task is artificial. Real sabotage is not "return the wrong answer on one secret stdin."
 - "Sandbagging" is a behavioral label. I am not claiming the model has a hidden goal or knows it is sandbagging. I am claiming the safety-graded framing lowers its backdoor rate, which is enough to make the eval number misleading on its own.
-- Cross-provider replication is still running. gpt-oss-120b here was served by Groq. If the same weights on Cerebras show the same gap, that rules out a serving-stack quirk. [Result pending, fill on landing.]
+- Cross-provider replication is in: gpt-oss-120b shows the gap on both Groq (deploy 50 versus eval 17) and Cerebras (deploy 74 versus eval 26), with the same per-wording signature, so the effect is model-driven rather than a serving-stack quirk.
 
 ## Responsible research note
 
