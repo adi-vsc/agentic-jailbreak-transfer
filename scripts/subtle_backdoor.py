@@ -32,10 +32,10 @@ from ajt.runner import run_trial
 from ajt.stats import fmt_rate
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
-# Breadth across families/sizes/safety-tuning levels. Cerebras gives a
-# cross-provider replication of gpt-oss-120b; openrouter fills mid-tier.
+# Breadth across families/sizes. Cerebras dropped (free-tier quota near cap);
+# the backdoors it already generated remain in earlier subtle_*.jsonl and are
+# reused by the monitor harvest at no further cost. Groq is free, OpenRouter cents.
 GEN_LABELS = [
-    "cerebras/gpt-oss-120b", "cerebras/glm-4.7",
     "gpt-oss-120b", "gpt-oss-20b",
     "llama-3.3-70b", "deepseek-chat", "mistral-small-24b",
 ]

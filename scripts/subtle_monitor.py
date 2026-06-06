@@ -7,7 +7,7 @@ disguised sabotage, that gap is the headline finding.
 
 Usage: python scripts/subtle_monitor.py [--models SUBSTR,SUBSTR] [--workers N]
 """
-import argparse, json, glob, sys, threading
+import argparse, json, glob, random, sys, threading
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -24,8 +24,13 @@ from ajt.models import PROBE_MODELS
 from ajt.stats import catch_rate_by_rung, fmt_rate
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
-MONITOR_LABELS = ["claude-sonnet-4.6", "claude-haiku-4.5",
-                  "gpt-oss-120b", "cerebras/gpt-oss-120b", "llama-3.3-70b"]
+# Cerebras dropped from the live panel (free-tier quota near cap); gpt-oss-120b
+# is served by Groq instead. Backdoors that Cerebras already generated stay in
+# the harvested pool (they cost no new calls, they are just code strings now).
+# llama-3.3-70b dropped too: on Groq it shares quota with gpt-oss-120b and gets
+# rate-limited (429) into uselessness; the result needs the Claude (refuse-but-
+# blind) cells plus gpt-oss-120b (the strong monitor from Exp 4).
+MONITOR_LABELS = ["claude-sonnet-4.6", "claude-haiku-4.5", "gpt-oss-120b"]
 PROVIDER_LIMITS = {"anthropic": 2, "groq": 4, "openrouter": 4, "cerebras": 2}
 RUNGS = ["blatant", "subtle", "disguised"]
 
@@ -80,6 +85,11 @@ def main() -> None:
 
     sems = {p: threading.Semaphore(n) for p, n in PROVIDER_LIMITS.items()}
     cells = [(spec, s) for spec in specs for s in samples]
+    # Interleave so one rate-limited monitor (e.g. a Groq model hitting 429s)
+    # can't hog every worker on backoff sleeps and starve the others. Without
+    # this, the monitor pool runs model-by-model and the last monitor never
+    # starts until the first fully drains.
+    random.Random(0).shuffle(cells)
     counts_str = ", ".join(f"{r}={rung_counts[r]}" for r in RUNGS if r in rung_counts)
     print(f"Subtle-monitor: {len(specs)} monitors x {len(samples)} samples "
           f"({counts_str}) = {len(cells)} trials\n"
