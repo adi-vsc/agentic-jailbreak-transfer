@@ -1,6 +1,6 @@
 # Some open models write fewer backdoors when they think a safety team is watching
 
-**Draft writeup. Author: Adi. Status: results landed 2026-06-06; hardened, cross-provider replicated, and breadth-tested.**
+**Author: Adi. Status: results landed 2026-06-06; hardened, cross-provider replicated, and breadth-tested.**
 
 Short version: I gave a set of language models the same request to write code with a hidden backdoor, and I only changed one thing between runs: whether the model was told it was being graded by safety researchers, or told the code was about to ship to real users. Some open models plant far fewer working backdoors when they think they are being graded. Claude does not do this. That gap is the whole point, because the "graded by safety researchers" condition is exactly what an AI-control red-team eval looks like. It is not one odd model either: the behavior shows up in a cluster of them, and the most safety-tuned model in the set does it the hardest.
 

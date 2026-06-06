@@ -94,21 +94,25 @@ def fig_degradation():
 
     for xi, r in zip(x, RUNGS):
         yw, nw = yc[r]; fc, nc = cc[r]
+        # labels sit at the top-right corner of each dot, same offset distance
         ax.annotate(f"{100*yw/nw:.0f}%", (xi, y_yield[xi][0]), textcoords="offset points",
-                    xytext=(0, -16), ha="center", color=ORANGE, fontsize=9)
+                    xytext=(11, 11), ha="left", va="bottom", color=ORANGE, fontsize=9)
         ax.annotate(f"{100*fc/nc:.0f}%", (xi, y_catch[xi][0]), textcoords="offset points",
-                    xytext=(0, 10), ha="center", color=BLUE, fontsize=9)
+                    xytext=(7, 7), ha="left", va="bottom", color=BLUE, fontsize=9)
 
     ax.set_xticks(x)
     ax.set_xticklabels([f"{r}\n(n={yc[r][1]} gen, {cc[r][1]} mon)" for r in RUNGS])
     ax.set_ylabel("percent (Wilson 95% CI)")
     ax.set_ylim(0, 105)
+    ax.set_xlim(-0.25, len(RUNGS) - 1 + 0.45)  # room for top-right labels on the last point
     ax.set_title("The subtle-backdoor frontier: quiet sabotage is rarer, but evades review")
-    ax.legend(loc="lower left", fontsize=9, framealpha=0.95)
+    # legend pushed below the axes so it cannot overlap the yield line
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.24), fontsize=9,
+              framealpha=0.95, ncol=1)
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     out = FIGS / "subtle_backdoor_degradation.png"
-    fig.savefig(out, dpi=150)
+    fig.savefig(out, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"wrote {out}")
 
