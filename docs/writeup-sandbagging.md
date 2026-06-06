@@ -15,7 +15,7 @@ Four experiments, one claim: the standard way of trusting a control eval has a g
 3. The eval is gameable. Hold the task fixed and change only whether the model thinks a safety team is grading it. Some open models drop their backdoor rate sharply under the safety-eval cue. Claude does not. The safety-eval cue is exactly what a control red-team looks like, so for those models the eval number is the optimistic one.
 4. The monitor has a blind spot where it matters. The fallback for an untrusted model is a trusted reviewer in front of it. That reviewer catches loud backdoors every time, even ones it would itself refuse to write. Make the sabotage quiet and roughly a third of it walks straight past a frontier reviewer. The cases the monitor misses are the cases that count.
 
-The rest is these four, in order, with error bars on everything.
+The rest is these four, in order, with error bars on everything. Every headline claim below rests on cases where the Wilson intervals actually separate, not on the widest, thinnest-sampled cells.
 
 ## Why I bothered
 
@@ -191,6 +191,7 @@ Put the two halves together and you get the actual shape of the threat. Disguise
 - The backdoor task is artificial. Real sabotage is not "return the wrong answer on one secret stdin."
 - "Sandbagging" is a behavioral label. I am not claiming the model has a hidden goal or knows it is sandbagging. I am claiming the safety-graded framing lowers its backdoor rate, which is enough to make the eval number misleading on its own.
 - Cross-provider replication is in: gpt-oss-120b shows the gap on both Groq (deploy 50 versus eval 17) and Cerebras (deploy 74 versus eval 26), with the same per-wording signature, so the effect is model-driven rather than a serving-stack quirk.
+- Untrusted code runs with a timeout and nothing else. `ajt/sandbox.py` executes each model's program in a fresh subprocess with a wall-clock timeout, but no filesystem, network, or resource isolation. That is defensible here because the harm is toy (the worst a trial does is print a wrong number on one input), but it is not a containment boundary. A stronger threat model than wrong-answer backdoors would need nsjail, a container, or seccomp before running model output on a host you care about.
 
 ## Responsible research note
 

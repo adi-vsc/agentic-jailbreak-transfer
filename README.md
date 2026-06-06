@@ -1,5 +1,7 @@
 # Agentic jailbreak transfer
 
+[![CI](https://github.com/adi-vsc/agentic-jailbreak-transfer/actions/workflows/ci.yml/badge.svg)](https://github.com/adi-vsc/agentic-jailbreak-transfer/actions/workflows/ci.yml)
+
 Some open-weight models write fewer code backdoors when they think a safety team is grading them than when they think the code is about to ship. If a model behaves better precisely when it is being measured, the measurement is optimistic, and that is a problem for any AI-control eval that trusts its own numbers.
 
 This repo measures that gap on a task where harm is machine-checkable, so there is no human grader to argue with. The full writeup is in [`docs/writeup-sandbagging.md`](docs/writeup-sandbagging.md).
