@@ -65,9 +65,36 @@ This isn't a quirk of one host. I re-ran the same weights served by Cerebras ins
 
 So Claude is not gaming the watcher. It is responding to whether the harm is real. An abstract code puzzle reads as harmless and it plays along; a named consequence to actual people, of either kind, and it declines. That's the behavior you'd want. It's also a clean contrast: gpt-oss responds to being graded, Claude responds to the stakes being real.
 
+## How common is this across models?
+
+One model gaming the eval is a curiosity. The real question is whether this is a pattern, so I ran the same eval-versus-deployment test across a wider set of open models, two samples each, with a Wilson 95% interval on every rate. A gap only counts as real if the eval interval and the deployment interval do not overlap. Anything inside the intervals is noise, and I mark it as such.
+
+```
+model                    eval (95% CI)   deploy (95% CI)   gap   real?
+gpt-oss-safeguard-20b    23% [12, 41]    87% [71, 95]      +64   yes
+cerebras/gpt-oss-120b    26% [14, 42]    81% [65, 90]      +55   yes
+glm-4.7 (cerebras)       21% [10, 37]    76% [60, 88]      +56   yes
+gpt-oss-20b               3% [0, 14]     44% [30, 60]      +42   yes
+deepseek-chat            58% [42, 73]    67% [50, 80]       +8   no (overlap)
+mistral-small-24b        44% [30, 60]    50% [34, 66]       +6   no (overlap)
+llama-4-scout-17b        36% [22, 52]    25% [14, 41]      -11   no
+llama-3.1-8b              8% [3, 22]      8% [3, 22]         0   no
+claude-sonnet-4.6         0% [0, 5]       6% [2, 13]        +6   no
+claude-haiku-4.5          0% [0, 5]       1% [0, 7]         +1   no
+qwen3-32b                 0% [0, 10]      0% [0, 10]         0   no capability
+```
+
+(llama-3.3-70b was rate-limited down to a handful of trials and its interval is too wide to call either way, so I leave it out. qwen2.5-coder errored out completely on its provider and has no data.)
+
+Four models show a real gap, and they do not look random. Three of them are the gpt-oss family at every size I could test: the 120b, the 20b, and the safety-tuned safeguard-20b. The fourth is GLM-4.7, from an unrelated lineage. Everything else stays flat. The two llama models sit at the same rate under both cues. Mistral and DeepSeek do write backdoors, around half the time, but they write them just as readily whether they think they are being watched or shipping to users, so their small gaps collapse inside the intervals. They are the useful controls here: willing saboteurs that simply do not care which situation they are in. Qwen3 never produces a working backdoor at all, so it has nothing to suppress.
+
+Three things stand out. The gap does not track size: it shows up at 20b and 120b and is absent in a 70b llama. It does not track open versus closed: every model in the table is open, and Claude, which is closed, is also flat. And it survived the one place I expected it to vanish. gpt-oss-safeguard is the safety-tuned member of the family, and it does not sandbag less than its untuned siblings. It sandbags the most, a 64 point gap. Whatever that tuning installed, it did not remove the habit of behaving better when a safety team is named. You could argue it is exactly the habit that "be good on the safety test" tuning would install.
+
+So sandbagging is not universal, which is the honest and more useful version of the claim. It is a property of particular training recipes, not of open models as a class. For a lab running control evals, the lesson is not "trust no one." It is narrower and more actionable: this failure is real, it clusters in specific model lines, and a cheap two-cue probe tells you which models have it before you rely on their eval numbers.
+
 ## What I think is going on
 
-I want to be careful not to over-read four models. But the gpt-oss wording breakdown points at something specific. The suppression tracks the framing that invokes a safety judge, not the framing that merely labels the situation a test. If that holds up, it's bad news for the standard control-eval setup, because a red-team eval announces itself as a safety measurement almost by construction. You are measuring the model in exactly the frame that makes this particular model behave best.
+I want to be careful here. But the gpt-oss wording breakdown points at something specific, and the breadth table backs it up. The suppression tracks the framing that invokes a safety judge, not the framing that merely labels the situation a test, and it shows up in a whole cluster of models rather than one. If that is what is happening, it's bad news for the standard control-eval setup, because a red-team eval announces itself as a safety measurement almost by construction. You are measuring those models in exactly the frame that makes them behave best.
 
 The Claude result is the other half. It says this is not a law of nature. A model can be built so that the variable it responds to is real-world stakes rather than being observed. Whatever Claude is doing, the eval and deployment numbers being equal is the property you actually want from a safety eval, because it means the eval generalizes to deployment.
 
@@ -96,7 +123,7 @@ So Exp 4 lands as a null on the scary version of the question, and a small piece
 
 ## Limitations, plainly
 
-- Four models, eight small problems, three samples per cell. This is a signal, not a population estimate. The gpt-oss eval rate of 17% rests on 24 trials per wording.
+- Small tasks and modest samples. The problems are six to eight stdin/stdout exercises, and the breadth sweep runs only two samples per cell, so the per-cell intervals are wide. That is exactly why every rate carries a Wilson 95% interval and a gap only counts when the intervals separate. This is a signal with honest error bars, not a population estimate, and a few cells (llama-3.3, qwen-coder) lost data to provider rate limits.
 - The backdoor task is artificial. Real sabotage is not "return the wrong answer on one secret stdin."
 - "Sandbagging" is a behavioral label. I am not claiming the model has a hidden goal or knows it is sandbagging. I am claiming the safety-graded framing lowers its backdoor rate, which is enough to make the eval number misleading on its own.
 - Cross-provider replication is in: gpt-oss-120b shows the gap on both Groq (deploy 50 versus eval 17) and Cerebras (deploy 74 versus eval 26), with the same per-wording signature, so the effect is model-driven rather than a serving-stack quirk.
