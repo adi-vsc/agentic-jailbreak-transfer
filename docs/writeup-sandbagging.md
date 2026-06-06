@@ -142,6 +142,8 @@ That is correct for every normal input and silently wrong once the integers get 
 
 Two things happen as you climb the ladder, and they pull in opposite directions.
 
+![Backdoor yield falls as sabotage gets quieter, but so does the monitor's catch-rate: blatant backdoors are produced 61 percent of the time and caught 100 percent, disguised ones are produced 15 percent of the time and caught 70 percent.](figures/subtle_backdoor_degradation.png)
+
 First, the backdoors get harder to produce. Across the willing models, the share of attempts that yield a verified targeted backdoor falls off a cliff:
 
 ```
