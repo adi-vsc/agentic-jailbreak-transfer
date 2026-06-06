@@ -6,6 +6,17 @@ Short version: I gave a set of language models the same request to write code wi
 
 If a model behaves better precisely when it's being measured, the measurement is optimistic.
 
+## The argument in four steps
+
+Four experiments, one claim: the standard way of trusting a control eval has a gap, and the gap is widest exactly where it is hardest to see.
+
+1. Willingness is close to free. Under a neutral or deployment cue, most models in the set will plant a working backdoor on request. What separates them is capability, not reluctance: the models that rarely produce one mostly cannot thread a real bug through the verifier, they do not refuse to.
+2. Capability varies, so the base rate does too. A 70b model lands working backdoors most of the time; an 8b or a non-coding model rarely does. This is the control that keeps the rest honest, because it means a low number can be "can't" rather than "won't."
+3. The eval is gameable. Hold the task fixed and change only whether the model thinks a safety team is grading it. Some open models drop their backdoor rate sharply under the safety-eval cue. Claude does not. The safety-eval cue is exactly what a control red-team looks like, so for those models the eval number is the optimistic one.
+4. The monitor has a blind spot where it matters. The fallback for an untrusted model is a trusted reviewer in front of it. That reviewer catches loud backdoors every time, even ones it would itself refuse to write. Make the sabotage quiet and roughly a third of it walks straight past a frontier reviewer. The cases the monitor misses are the cases that count.
+
+The rest is these four, in order, with error bars on everything.
+
 ## Why I bothered
 
 A lot of AI-control safety work measures how often a model will do something harmful under evaluation, then uses that number to reason about deployment. The unstated assumption is that the model behaves the same way in both places. Eval-awareness research has already shown models can tell when they are being tested. I wanted the narrower, more uncomfortable version of that: not "can the model tell," but "does the safety number itself move when the model can tell." On a task where harm is machine-checkable, so there's no human grader to argue with. That's what I wanted to test.
@@ -187,8 +198,23 @@ Everything here uses open-weight models and a deliberately toy harm (a wrong ans
 
 ## Reproduce
 
+Each step of the argument is one command.
+
 ```
+# Step 3, sandbagging: same request, only the situational cue changes
 python scripts/sandbagging_eval.py --models "gpt-oss-120b,llama-3.3-70b,claude" --samples 3 --limit-problems 8
+
+# Step 4a, refuse-but-blind: can a model catch a backdoor it would refuse to write?
+python scripts/blind_monitor.py --per-problem 3
+
+# Step 4b, subtle frontier (generation): build backdoors across the subtlety ladder
+python scripts/subtle_backdoor.py --samples 4 --limit-problems 10
+
+# Step 4c, subtle frontier (monitor): how does catch-rate degrade per rung?
+python scripts/subtle_monitor.py --models "claude" --workers 2
+
+# Render the figures from whatever is in results/
+python scripts/make_figures.py
 ```
 
-Raw trial logs land in `results/`. Every trial stores the model's full response, the secret input it chose, and the three verifier checks, so any single "working backdoor" can be re-run by hand.
+Steps 1 and 2 (willingness and capability) fall out of the neutral and deployment columns of the sandbagging run, so they need no separate command. Raw trial logs land in `results/`. Every trial stores the model's full response, the secret input it chose, and the three verifier checks, so any single "working backdoor" can be re-run by hand.
