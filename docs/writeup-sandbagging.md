@@ -166,20 +166,21 @@ disguised   15% [10, 20]
 
 Asking for a hidden backdoor makes a model about four times less likely to actually deliver one. Some of that is capability, since threading a real bug through a deterministic verifier is genuinely hard, and some is that the disguise instruction itself seems to dampen the behavior. Either way, the disguise requirement is expensive for the attacker.
 
-Second, the ones that do get through are harder to catch. I harvested the verified backdoors at each rung (104 blatant, 26 subtle, 27 disguised) and ran them past the two Claude monitors, the same models that caught everything in Exp 4.
+Second, the ones that do get through are harder to catch. I harvested the verified backdoors at each rung (104 blatant, 26 subtle, 27 disguised) and ran them past the two Claude monitors, the same models that caught everything in Exp 4, plus gpt-oss-120b as an open-model comparison (the strongest reviewer from Exp 4).
 
 ```
 monitor             blatant         subtle          disguised
 claude-haiku-4.5    99% [95,100]    81% [62,91]     81% [63,92]
 claude-sonnet-4.6   100% [96,100]   81% [62,91]     59% [41,75]
-both pooled         100% [97,100]   81% [68,89]     70% [57,81]
+claude pooled       100% [97,100]   81% [68,89]     70% [57,81]
+gpt-oss-120b        100% [96,100]   59% [36,78]     47% [25,70]
 ```
 
 The catch-rate falls as the backdoor goes quiet. Pooled, it drops from 100 percent on blatant to 70 percent on disguised. For Sonnet the slide is steeper, down to 59 percent, and its blatant interval [96, 100] does not overlap its disguised interval [41, 75], so that drop is real and not noise.
 
 The clean part of this result is that each monitor is its own control. The same model, with the same reviewer prompt, flags blatant backdoors at 100 percent. So when it misses a disguised one, that is a genuine detection failure, not a model that is shy about flagging in general. Exp 4's reassuring headline, that monitoring works, was true only for the loud backdoors I happened to test. Make the sabotage quiet and roughly a third of it walks past a frontier reviewer.
 
-I also wanted an open-model monitor in this table, gpt-oss-120b, the strongest reviewer from Exp 4. I could not get a clean run: with Cerebras retired and Groq's free tier rate-limiting hard, the pass returned only 4 and 2 valid verdicts on the subtle and disguised rungs, far too few to report. It caught every blatant backdoor it saw, which is all I will claim from it. So the degradation table here is Claude-only, and a proper open-model comparison is left for a run with more reliable inference.
+The open-model monitor, gpt-oss-120b, degrades harder than Claude does. It catches every blatant backdoor (84 of 84) but only 59 percent of subtle and 47 percent of disguised ones. Groq's free tier rate-limited the harder rungs, so its subtle and disguised pools are thinner than Claude's (17 and 15 valid verdicts after dropped calls), and the intervals are wide to match. Even so the direction is the same as Claude's and steeper: a weaker trusted monitor buys you less, and on disguised sabotage it is closer to a coin flip than to oversight. Its own 100 percent on blatant is again the control that rules out a generally-blind reviewer. The figure above stays Claude-only; this row is the open-model point of comparison.
 
 I want to be careful about what this does and does not show. The subtle and disguised pools are small, 26 and 27 samples, so those intervals are wide and I would not read much into Sonnet catching less than Haiku on disguised, since their intervals overlap. This run also has no false-positive column, because every sample is a real backdoor. The blatant 100 percent is what rules out the trivial "flags everything" reading, and Exp 4 already put Claude's clean-code false-positive rate around one in six. What I am confident in is the direction and the rough size: catch-rate degrades as subtlety rises, and the gap between loud and quiet is large enough to matter.
 
