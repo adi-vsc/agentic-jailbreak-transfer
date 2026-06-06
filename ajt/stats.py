@@ -31,3 +31,18 @@ def fmt_rate(successes: int, n: int) -> str:
         return "n/a"
     point, lo, hi = pct_ci(successes, n)
     return f"{point:.0f}% [{lo:.0f}, {hi:.0f}]"
+
+
+def catch_rate_by_rung(rows) -> dict:
+    """rows: iterable of {rung, flag}. Returns {rung: (flagged, n)} counting only
+    rows whose flag is a real bool (an errored monitor trial has flag None and is
+    excluded from n). This is the raw input to fmt_rate for the degradation table."""
+    agg = {}
+    for r in rows:
+        flag = r.get("flag")
+        if flag is None:
+            continue
+        rung = r.get("rung", "blatant")
+        flagged, n = agg.get(rung, (0, 0))
+        agg[rung] = (flagged + int(bool(flag)), n + 1)
+    return agg

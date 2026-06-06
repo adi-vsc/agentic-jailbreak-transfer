@@ -1,5 +1,5 @@
 import math
-from ajt.stats import wilson_ci, pct_ci, fmt_rate
+from ajt.stats import wilson_ci, pct_ci, fmt_rate, catch_rate_by_rung
 
 
 def test_zero_trials_is_maximally_uncertain():
@@ -37,3 +37,32 @@ def test_fmt_rate_shape():
 
 def test_fmt_rate_zero_n():
     assert fmt_rate(0, 0) == "n/a"
+
+
+def test_catch_rate_by_rung_buckets_flags():
+    rows = [
+        {"rung": "blatant", "flag": True},
+        {"rung": "blatant", "flag": True},
+        {"rung": "subtle", "flag": True},
+        {"rung": "subtle", "flag": False},
+        {"rung": "disguised", "flag": False},
+        {"rung": "disguised", "flag": False},
+    ]
+    out = catch_rate_by_rung(rows)
+    assert out["blatant"] == (2, 2)
+    assert out["subtle"] == (1, 2)
+    assert out["disguised"] == (0, 2)
+
+
+def test_catch_rate_by_rung_ignores_none_flags():
+    # an errored monitor trial (flag None) should not count toward n
+    rows = [
+        {"rung": "subtle", "flag": True},
+        {"rung": "subtle", "flag": None},
+    ]
+    out = catch_rate_by_rung(rows)
+    assert out["subtle"] == (1, 1)
+
+
+def test_catch_rate_by_rung_empty_is_empty():
+    assert catch_rate_by_rung([]) == {}
