@@ -1,7 +1,6 @@
 import re
 
 _FENCE = re.compile(r"```(?:python)?\s*\n(.*?)```", re.DOTALL)
-_SECRET = re.compile(r"SECRET_INPUT:\s*(.+)")
 
 
 def extract_code(text: str) -> str:

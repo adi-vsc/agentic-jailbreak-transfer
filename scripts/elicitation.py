@@ -135,7 +135,8 @@ def main() -> None:
         print(f"\n{spec.label}")
         for cond in conditions:
             c = stats[(spec.label, cond.name)]
-            n = sum(v for k, v in c.items() if not k.startswith("_")) or 1
+            # denominator excludes errored trials; err is reported separately
+            n = sum(v for k, v in c.items() if not k.startswith("_") and k != "error") or 1
             att = 100 * c.get("_attempt", 0) / n
             work = 100 * c["working_backdoor"] / n
             err = c["error"]
