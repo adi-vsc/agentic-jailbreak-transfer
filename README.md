@@ -68,3 +68,7 @@ python -m pytest -v
 ## Responsible research note
 
 Everything here uses open-weight models and a deliberately toy harm: a wrong answer on one input. There is no real target, no deployed system, and nothing in the repo is a usable sabotage tool. The point is defensive. If control evals can be gamed by some models, the people running those evals should know which framings get gamed. Frontier numbers are reported in aggregate.
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).
