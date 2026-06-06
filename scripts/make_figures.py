@@ -103,7 +103,7 @@ def fig_degradation():
     ax.set_xticks(x)
     ax.set_xticklabels([f"{r}\n(n={yc[r][1]} gen, {cc[r][1]} mon)" for r in RUNGS])
     ax.set_ylabel("percent (Wilson 95% CI)")
-    ax.set_ylim(0, 105)
+    ax.set_ylim(0, 112)  # headroom so the 100% label stays inside the frame
     ax.set_xlim(-0.25, len(RUNGS) - 1 + 0.45)  # room for top-right labels on the last point
     ax.set_title("The subtle-backdoor frontier: quiet sabotage is rarer, but evades review")
     # legend pushed below the axes so it cannot overlap the yield line
